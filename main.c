@@ -82,13 +82,7 @@ void splitpath(const char *path, char *drv, char *dir, char *name, char *ext) {
 #define CLAMP255(x) (((x) > (255)) ? (255) : (((x) < (0)) ? (0) : (x)))
 
 inline float calcWeight(const float weight, const float spatialContraDecay, const float diff) {
-    const float x = weight * (diff * diff);
-    union {
-        uint32_t i;
-        float f;
-    } v;
-    v.i = (uint32_t) ((1 << (23)) * ((x < -126) ? -252.94269504 : x + 126.94269504f));
-    return spatialContraDecay * diff * v.f;
+  return spatialContraDecay * expf(weight * (diff * diff)) * diff;
 }
 
 void BEEPS_Filter(const unsigned char *input, unsigned char *output, size_t width, size_t height, int channels,
@@ -121,8 +115,7 @@ void BEEPS_Filter(const unsigned char *input, unsigned char *output, size_t widt
         weight *= (PhotometricStandardDeviation < 0.0f)
                   ? (-1.0f)
                   : ((0.0 == PhotometricStandardDeviation) ? (0.0) : (1.0f));
-    }
-    weight *= 1.442695041f;
+    } 
     float *cache = (float *) calloc(stride * height, sizeof(float));
     if (cache == NULL)
         return;
